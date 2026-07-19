@@ -51,16 +51,17 @@ export default function SchedulePage() {
 
       const amountUnits = BigInt(Math.floor(numericAmount * 1e6));
       
-      // Calculate executeAfter timestamp
+      // Calculate executeAfter timestamp with mining buffer
       const block = await browserProvider.getBlock("latest");
-      const currentTs = block ? block.timestamp : Math.floor(Date.now() / 1000);
+      const currentBlockTs = block ? Number(block.timestamp) : Math.floor(Date.now() / 1000);
+      const nowTs = Math.max(currentBlockTs, Math.floor(Date.now() / 1000));
 
-      let executeAfterTs = currentTs + delaySeconds;
+      let executeAfterTs = nowTs + delaySeconds + 10; // 10s mining buffer
       if (delaySeconds === 0 && customTimestamp) {
         executeAfterTs = Math.floor(new Date(customTimestamp).getTime() / 1000);
       }
 
-      if (executeAfterTs <= currentTs) {
+      if (executeAfterTs <= nowTs) {
         alert("Execution time must be in the future!");
         setLoading(false);
         return;
