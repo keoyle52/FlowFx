@@ -70,7 +70,7 @@ export default function SchedulePage() {
       setStatusMessage(`Approving ${fromToken} transfer...`);
       const allowance = await tokenContract.allowance(userAddress, CONTRACT_ADDRESSES.PaymentScheduler);
       if (BigInt(allowance) < amountUnits) {
-        const approveTx = await tokenContract.approve(CONTRACT_ADDRESSES.PaymentScheduler, amountUnits * BigInt(10));
+        const approveTx = await tokenContract.approve(CONTRACT_ADDRESSES.PaymentScheduler, amountUnits);
         await approveTx.wait();
       }
 

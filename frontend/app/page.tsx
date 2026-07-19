@@ -100,7 +100,7 @@ export default function SwapPage() {
       const allowance = await tokenInContract.allowance(account, CONTRACT_ADDRESSES.FXPool);
       if (BigInt(allowance) < inAmountUnits) {
         setStatusMessage("Approving FXPool contract to spend tokens...");
-        const approveTx = await tokenInContract.approve(CONTRACT_ADDRESSES.FXPool, inAmountUnits * BigInt(10));
+        const approveTx = await tokenInContract.approve(CONTRACT_ADDRESSES.FXPool, inAmountUnits);
         await approveTx.wait();
       }
 
