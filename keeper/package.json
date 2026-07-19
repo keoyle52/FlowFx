@@ -1,0 +1,18 @@
+{
+  "name": "flowfx-keeper",
+  "version": "1.0.0",
+  "description": "FlowFX Time-locked Order Execution Bot on Arc Testnet",
+  "main": "src/executor.ts",
+  "scripts": {
+    "start": "ts-node src/executor.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.2"
+  }
+}
