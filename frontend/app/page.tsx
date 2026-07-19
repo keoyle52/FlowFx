@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import { CONTRACT_ADDRESSES, ERC20_ABI, FX_POOL_ABI, ARC_TESTNET_CONFIG } from "@/lib/contracts";
+import { CONTRACT_ADDRESSES, ERC20_ABI, FX_POOL_ABI, ARC_TESTNET_CONFIG, getArcProvider } from "@/lib/contracts";
 
 export default function SwapPage() {
   const [account, setAccount] = useState<string | null>(null);
@@ -23,7 +23,7 @@ export default function SwapPage() {
 
   async function loadData() {
     try {
-      const provider = new ethers.JsonRpcProvider(ARC_TESTNET_CONFIG.rpcUrl);
+      const provider = await getArcProvider();
       
       // Pool balances
       const usdcContract = new ethers.Contract(CONTRACT_ADDRESSES.USDC, ERC20_ABI, provider);
@@ -48,13 +48,13 @@ export default function SwapPage() {
         }
       }
     } catch (e) {
-      console.error("Error loading data:", e);
+      console.error("Error loading swap data:", e);
     }
   }
 
   useEffect(() => {
     loadData();
-    const interval = setInterval(loadData, 8000);
+    const interval = setInterval(loadData, 5000);
     return () => clearInterval(interval);
   }, []);
 

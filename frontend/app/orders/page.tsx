@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import { CONTRACT_ADDRESSES, PAYMENT_SCHEDULER_ABI, ARC_TESTNET_CONFIG } from "@/lib/contracts";
+import { CONTRACT_ADDRESSES, PAYMENT_SCHEDULER_ABI, ARC_TESTNET_CONFIG, getArcProvider } from "@/lib/contracts";
 
 interface OrderData {
   id: number;
@@ -22,20 +22,10 @@ export default function OrdersPage() {
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
   const [currentAccount, setCurrentAccount] = useState<string | null>(null);
 
-  async function getProvider() {
-    try {
-      const p1 = new ethers.JsonRpcProvider(ARC_TESTNET_CONFIG.rpcUrl);
-      await p1.getBlockNumber();
-      return p1;
-    } catch {
-      return new ethers.JsonRpcProvider(ARC_TESTNET_CONFIG.fallbackRpcUrl);
-    }
-  }
-
   async function fetchOrders() {
     try {
       setErrorMessage(null);
-      const provider = await getProvider();
+      const provider = await getArcProvider();
       const scheduler = new ethers.Contract(CONTRACT_ADDRESSES.PaymentScheduler, PAYMENT_SCHEDULER_ABI, provider);
 
       const nextId = await scheduler.nextOrderId();

@@ -1,9 +1,15 @@
+import { ethers } from "ethers";
+
 export const ARC_TESTNET_CONFIG = {
   chainId: 5042002,
   hexChainId: "0x4cef52",
   chainName: "Arc Testnet",
-  rpcUrl: "https://rpc.testnet.arc.network",
-  fallbackRpcUrl: "https://arc-testnet.drpc.org",
+  rpcUrl: "https://arc-testnet.drpc.org",
+  rpcUrls: [
+    "https://arc-testnet.drpc.org",
+    "https://rpc.testnet.arc.network",
+    "https://rpc.blockdaemon.testnet.arc.network"
+  ],
   blockExplorerUrl: "https://testnet.arcscan.app",
   nativeCurrency: {
     name: "USDC",
@@ -11,6 +17,19 @@ export const ARC_TESTNET_CONFIG = {
     decimals: 18
   }
 };
+
+export async function getArcProvider(): Promise<ethers.JsonRpcProvider> {
+  for (const url of ARC_TESTNET_CONFIG.rpcUrls) {
+    try {
+      const p = new ethers.JsonRpcProvider(url);
+      await p.getBlockNumber();
+      return p;
+    } catch {
+      continue;
+    }
+  }
+  return new ethers.JsonRpcProvider(ARC_TESTNET_CONFIG.rpcUrls[0]);
+}
 
 export const CONTRACT_ADDRESSES = {
   USDC: "0x3600000000000000000000000000000000000000",
