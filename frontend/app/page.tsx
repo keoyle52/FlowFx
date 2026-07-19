@@ -70,10 +70,26 @@ export default function SwapPage() {
   }
 
   async function executeSwap() {
-    if (!account) {
-      alert("Please connect your wallet first!");
-      return;
+    let userAddr = account;
+    if (!userAddr) {
+      if (typeof window !== "undefined" && (window as any).ethereum) {
+        try {
+          const browserProvider = new ethers.BrowserProvider((window as any).ethereum);
+          const accounts = await browserProvider.send("eth_requestAccounts", []);
+          if (accounts.length > 0) {
+            userAddr = accounts[0];
+            setAccount(accounts[0]);
+          }
+        } catch (e) {
+          alert("Please connect your wallet to execute swap.");
+          return;
+        }
+      } else {
+        alert("Please install MetaMask or an EVM wallet.");
+        return;
+      }
     }
+
     if (parsedIn <= 0) {
       alert("Please enter a valid swap amount.");
       return;
@@ -97,7 +113,7 @@ export default function SwapPage() {
 
       // 1. Check & Approve Allowance
       setStatusMessage("Checking token approval...");
-      const allowance = await tokenInContract.allowance(account, CONTRACT_ADDRESSES.FXPool);
+      const allowance = await tokenInContract.allowance(userAddr, CONTRACT_ADDRESSES.FXPool);
       if (BigInt(allowance) < inAmountUnits) {
         setStatusMessage("Approving FXPool contract to spend tokens...");
         const approveTx = await tokenInContract.approve(CONTRACT_ADDRESSES.FXPool, inAmountUnits);
