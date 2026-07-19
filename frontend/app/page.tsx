@@ -108,8 +108,19 @@ export default function SwapPage() {
       const poolContract = new ethers.Contract(CONTRACT_ADDRESSES.FXPool, FX_POOL_ABI, signer);
 
       const inAmountUnits = BigInt(Math.floor(parsedIn * 1e6));
-      // 1% max slippage tolerance
-      const minOutUnits = BigInt(Math.floor(estimatedOut * 0.99 * 1e6));
+      
+      // Compute minOutUnits dynamically based on current direction
+      let currentEstOut = 0;
+      if (direction === "USDC_TO_EURC") {
+        const gross = (parsedIn * rateNum) / ratePrec;
+        currentEstOut = gross * (1 - feeBps / 10000);
+      } else {
+        const gross = (parsedIn * ratePrec) / rateNum;
+        currentEstOut = gross * (1 - feeBps / 10000);
+      }
+      
+      // 5% max slippage buffer for safe execution
+      const minOutUnits = BigInt(Math.floor(currentEstOut * 0.95 * 1e6));
 
       // 1. Check & Approve Allowance
       setStatusMessage("Checking token approval...");
@@ -124,9 +135,9 @@ export default function SwapPage() {
       setStatusMessage("Broadcasting instant FX swap transaction...");
       let swapTx;
       if (direction === "USDC_TO_EURC") {
-        swapTx = await poolContract.swapUSDCtoEURC(inAmountUnits, minOutUnits);
+        swapTx = await poolContract.swapUSDCtoEURC(inAmountUnits, minOutUnits, { gasLimit: 300000 });
       } else {
-        swapTx = await poolContract.swapEURCtoUSDC(inAmountUnits, minOutUnits);
+        swapTx = await poolContract.swapEURCtoUSDC(inAmountUnits, minOutUnits, { gasLimit: 300000 });
       }
 
       setTxHash(swapTx.hash);
