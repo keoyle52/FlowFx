@@ -4,8 +4,8 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 const RPC_URLS = [
-  process.env.ARC_RPC_URL || "https://rpc.testnet.arc.network",
-  "https://arc-testnet.drpc.org",
+  process.env.ARC_RPC_URL || "https://arc-testnet.drpc.org",
+  "https://rpc.testnet.arc.network",
   "https://rpc.blockdaemon.testnet.arc.network"
 ];
 
@@ -41,7 +41,7 @@ async function main() {
   const wallet = new ethers.Wallet(PRIVATE_KEY!, provider);
 
   console.log("==================================================");
-  console.log("FlowFX Keeper Bot Started on Arc Testnet");
+  console.log("FlowFX Keeper Bot Started on Arc Testnet (Daemon Mode)");
   console.log(`Keeper Address : ${wallet.address}`);
   console.log(`Scheduler Addr : ${SCHEDULER_ADDRESS}`);
   console.log(`Active RPC     : ${url}`);
@@ -87,6 +87,7 @@ async function main() {
   }
 
   await checkAndExecuteOrders();
+  setInterval(checkAndExecuteOrders, 10000);
 }
 
 main().catch((err) => {
