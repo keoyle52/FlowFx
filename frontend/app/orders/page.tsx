@@ -18,12 +18,24 @@ interface OrderData {
 export default function OrdersPage() {
   const [orders, setOrders] = useState<OrderData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
   const [currentAccount, setCurrentAccount] = useState<string | null>(null);
 
+  async function getProvider() {
+    try {
+      const p1 = new ethers.JsonRpcProvider(ARC_TESTNET_CONFIG.rpcUrl);
+      await p1.getBlockNumber();
+      return p1;
+    } catch {
+      return new ethers.JsonRpcProvider(ARC_TESTNET_CONFIG.fallbackRpcUrl);
+    }
+  }
+
   async function fetchOrders() {
     try {
-      const provider = new ethers.JsonRpcProvider(ARC_TESTNET_CONFIG.rpcUrl);
+      setErrorMessage(null);
+      const provider = await getProvider();
       const scheduler = new ethers.Contract(CONTRACT_ADDRESSES.PaymentScheduler, PAYMENT_SCHEDULER_ABI, provider);
 
       const nextId = await scheduler.nextOrderId();
@@ -31,28 +43,37 @@ export default function OrdersPage() {
 
       const loadedOrders: OrderData[] = [];
       for (let i = 1; i <= total; i++) {
-        const o = await scheduler.getOrder(i);
-        loadedOrders.push({
-          id: Number(o.id),
-          creator: o.creator,
-          fromToken: o.fromToken,
-          toToken: o.toToken,
-          amount: (Number(o.amount) / 1e6).toFixed(2),
-          recipient: o.recipient,
-          executeAfter: Number(o.executeAfter),
-          status: Number(o.status)
-        });
+        try {
+          const o = await scheduler.getOrder(i);
+          loadedOrders.push({
+            id: Number(o.id || i),
+            creator: o.creator || "",
+            fromToken: o.fromToken || "",
+            toToken: o.toToken || "",
+            amount: o.amount ? (Number(o.amount) / 1e6).toFixed(2) : "0.00",
+            recipient: o.recipient || "",
+            executeAfter: Number(o.executeAfter || 0),
+            status: Number(o.status || 0)
+          });
+        } catch (itemErr) {
+          console.warn(`Could not load order #${i}:`, itemErr);
+        }
       }
 
       setOrders(loadedOrders.reverse()); // Show newest first
 
       if (typeof window !== "undefined" && (window as any).ethereum) {
-        const browserProvider = new ethers.BrowserProvider((window as any).ethereum);
-        const accounts = await browserProvider.send("eth_accounts", []);
-        if (accounts.length > 0) setCurrentAccount(accounts[0]);
+        try {
+          const browserProvider = new ethers.BrowserProvider((window as any).ethereum);
+          const accounts = await browserProvider.send("eth_accounts", []);
+          if (accounts.length > 0) setCurrentAccount(accounts[0]);
+        } catch {
+          // ignore wallet query error
+        }
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Error fetching orders:", e);
+      setErrorMessage("Notice: Arc RPC rate-limited. Retrying automatically...");
     } finally {
       setLoading(false);
     }
@@ -60,7 +81,7 @@ export default function OrdersPage() {
 
   useEffect(() => {
     fetchOrders();
-    const interval = setInterval(fetchOrders, 8000);
+    const interval = setInterval(fetchOrders, 6000);
     return () => clearInterval(interval);
   }, []);
 
@@ -127,6 +148,12 @@ export default function OrdersPage() {
         </button>
       </div>
 
+      {errorMessage && (
+        <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-xs text-amber-400 text-center">
+          {errorMessage}
+        </div>
+      )}
+
       {loading ? (
         <div className="p-12 text-center text-slate-500 bg-slate-900/50 rounded-3xl border border-slate-800">
           Loading orders from Arc Testnet contract...
@@ -162,23 +189,26 @@ export default function OrdersPage() {
                   const isExecuted = o.status === 1;
                   const isCancelled = o.status === 2;
                   const isDue = isPending && now >= o.executeAfter;
-                  const isCreator = currentAccount && currentAccount.toLowerCase() === o.creator.toLowerCase();
+                  const isCreator = Boolean(currentAccount && o.creator && currentAccount.toLowerCase() === o.creator.toLowerCase());
+
+                  const isUsdc = o.fromToken && o.fromToken.toLowerCase() === CONTRACT_ADDRESSES.USDC.toLowerCase();
+                  const recipientDisplay = o.recipient && o.recipient.length >= 10 ? `${o.recipient.slice(0, 6)}...${o.recipient.slice(-4)}` : (o.recipient || "—");
 
                   return (
                     <tr key={o.id} className="hover:bg-slate-800/40 transition-colors">
                       <td className="px-6 py-4 font-mono font-bold text-white">#{o.id}</td>
                       <td className="px-6 py-4 font-semibold text-xs text-blue-400">
-                        {o.fromToken.toLowerCase() === CONTRACT_ADDRESSES.USDC.toLowerCase() ? "USDC ➔ EURC" : "EURC ➔ USDC"}
+                        {isUsdc ? "USDC ➔ EURC" : "EURC ➔ USDC"}
                       </td>
                       <td className="px-6 py-4 font-mono font-bold text-white">{o.amount}</td>
                       <td className="px-6 py-4 font-mono text-xs text-slate-400">
-                        {o.recipient.slice(0, 6)}...{o.recipient.slice(-4)}
+                        {recipientDisplay}
                       </td>
                       <td className="px-6 py-4 text-xs">
-                        <div className="text-slate-200">{new Date(o.executeAfter * 1000).toLocaleString()}</div>
+                        <div className="text-slate-200">{o.executeAfter ? new Date(o.executeAfter * 1000).toLocaleString() : "—"}</div>
                         {isPending && (
                           <div className="text-[10px] text-cyan-400">
-                            {isDue ? "⚡ Ready for Keeper Execution" : `Unlocks in ${o.executeAfter - now}s`}
+                            {isDue ? "⚡ Ready for Keeper Execution" : `Unlocks in ${Math.max(0, o.executeAfter - now)}s`}
                           </div>
                         )}
                       </td>
