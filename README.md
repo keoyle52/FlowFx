@@ -3,7 +3,7 @@
 > **Built on Arc Testnet** for the **Programmable Money Hackathon — DeFi Track**
 
 FlowFX is a decentralized FX payment & payroll protocol built on **Arc Testnet**. It enables instant **USDC ⇄ EURC stablecoin swaps** and **time-locked conditional cross-currency payment scheduling** (e.g., automated international payroll and recurring supplier invoices).
-
+Demo Video: https://www.youtube.com/watch?v=PdbJi8DFluI
 ---
 
 ## 🏆 Deployed Smart Contracts (Arc Testnet — Chain ID: `5042002`)
