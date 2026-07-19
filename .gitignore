@@ -6,10 +6,9 @@
 
 # Node.js
 node_modules/
+frontend/node_modules/
+keeper/node_modules/
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
 
 # Next.js
 frontend/.next/
@@ -22,6 +21,7 @@ out/
 contracts/out/
 contracts/cache/
 contracts/broadcast/
+contracts/lib/
 out/
 cache/
 broadcast/
